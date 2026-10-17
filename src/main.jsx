@@ -46,6 +46,10 @@ function dateInputValue(date) {
  return [date.getFullYear(), String(date.getMonth() + 1).padStart(2, '0'), String(date.getDate()).padStart(2, '0')].join('-')
 }
 
+function getInitials(name = 'Member') {
+ return name.trim().split(/\s+/).slice(0, 2).map(part => part[0] || '').join('').toUpperCase() || 'ME'
+}
+
 function Avatar({initials,color='mint',size='md',online=false}) {
  return <span className={`avatar avatar-${color} avatar-${size}`}>{initials}{online&&<i className="online-dot"/>}</span>
 }
