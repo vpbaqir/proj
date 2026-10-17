@@ -1,3 +1,4 @@
+// SkillLoop interactive web preview. Shared accounts, messaging and bookings require a configured backend.
 import React, { useEffect, useMemo, useState } from 'react'
 import { createRoot } from 'react-dom/client'
 import {
