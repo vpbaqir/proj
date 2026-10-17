@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react'
+import React, { useEffect, useMemo, useState } from 'react'
 import { createRoot } from 'react-dom/client'
 import {
   Activity, ArrowDownLeft, ArrowLeft, ArrowRight, ArrowUpRight, Bell, Bookmark, CalendarDays, Check,
@@ -27,13 +27,30 @@ const initialSessions = [
  {id:1,title:'Figma components, explained',person:'Amara Okafor',avatar:'AO',color:'mint',date:'Today',time:'5:30 PM',duration:'60 min',status:'Confirmed',type:'Learning'},
  {id:2,title:'Teach portrait photography',person:'Maya Chen',avatar:'MC',color:'lilac',date:'Tomorrow',time:'6:00 PM',duration:'60 min',status:'Pending',type:'Teaching'},
 ]
-const me = {name:'Alex Morgan',handle:'alexmorgan',avatar:'AM',color:'mint'}
+const STORAGE_PREFIX = 'skillloop:v1:'
+function usePersistentState(key, initialValue) {
+ const [value, setValue] = useState(() => {
+  try {
+   const stored = window.localStorage.getItem(STORAGE_PREFIX + key)
+   if (stored !== null) return JSON.parse(stored)
+  } catch { /* Storage may be unavailable in private browsing. */ }
+  return typeof initialValue === 'function' ? initialValue() : initialValue
+ })
+ useEffect(() => {
+  try { window.localStorage.setItem(STORAGE_PREFIX + key, JSON.stringify(value)) }
+  catch { /* Keep the app usable when browser storage is disabled or full. */ }
+ }, [key, value])
+ return [value, setValue]
+}
+function dateInputValue(date) {
+ return [date.getFullYear(), String(date.getMonth() + 1).padStart(2, '0'), String(date.getDate()).padStart(2, '0')].join('-')
+}
 
 function Avatar({initials,color='mint',size='md',online=false}) {
  return <span className={`avatar avatar-${color} avatar-${size}`}>{initials}{online&&<i className="online-dot"/>}</span>
 }
-function IconButton({children,label,onClick,className=''}) { return <button className={`icon-button ${className}`} aria-label={label} title={label} onClick={onClick}>{children}</button> }
-function Button({children,onClick,variant='primary',size='',icon:Icon,disabled=false}) {return <button disabled={disabled} className={`button button-${variant} ${size?'button-'+size:''}`} onClick={onClick}>{Icon&&<Icon size={16}/>}<span>{children}</span></button>}
+function IconButton({children,label,onClick,className='',type='button'}) { return <button type={type} className={`icon-button ${className}`} aria-label={label} title={label} onClick={onClick}>{children}</button> }
+function Button({children,onClick,variant='primary',size='',icon:Icon,disabled=false,type='button'}) {return <button type={type} disabled={disabled} className={`button button-${variant} ${size?'button-'+size:''}`} onClick={onClick}>{Icon&&<Icon size={16}/>}<span>{children}</span></button>}
 function Field({label,children}) {return <label className="field"><span>{label}</span>{children}</label>}
 
 function App(){
@@ -43,45 +60,65 @@ function App(){
  const [sort,setSort] = useState('For you')
  const [showFilters,setShowFilters] = useState(false)
  const [distance,setDistance] = useState('5 miles')
+ const [durationFilter,setDurationFilter] = useState('Any duration')
+ const [experienceFilter,setExperienceFilter] = useState('All levels')
  const [matchesOnly,setMatchesOnly] = useState(false)
- const [saved,setSaved] = useState([3])
- const [skills,setSkills] = useState(initialSkills)
- const [sessions,setSessions] = useState(initialSessions)
- const [joined,setJoined] = useState([])
+ const [saved,setSaved] = usePersistentState('saved-skills',[3])
+ const [skills,setSkills] = usePersistentState('skills',initialSkills)
+ const [sessions,setSessions] = usePersistentState('sessions',initialSessions)
+ const [joined,setJoined] = usePersistentState('joined-guilds',[])
+ const [customGuilds,setCustomGuilds] = usePersistentState('custom-guilds',[])
  const [selected,setSelected] = useState(null)
  const [modal,setModal] = useState(null)
  const [toast,setToast] = useState('')
- const [noticeCount,setNoticeCount] = useState(2)
+ const [noticeCount,setNoticeCount] = usePersistentState('unread-notifications',2)
  const [mobileMenu,setMobileMenu] = useState(false)
- const [profile,setProfile] = useState({name:'Alex Morgan',city:'Brooklyn, NY',learn:'Product design',teach:'Web development',bio:'Curious by nature. Always happy to trade notes and learn something new.',radius:'5 miles'})
+ const [profile,setProfile] = usePersistentState('profile',{name:'Alex Morgan',city:'Brooklyn, NY',learn:'Product design',teach:'Web development',bio:'Curious by nature. Always happy to trade notes and learn something new.',radius:'5 miles'})
  const [draftSkill,setDraftSkill] = useState({name:'',category:'Creative',level:'Beginner friendly',minutes:'60',teach:'',learn:''})
- const [bookDate,setBookDate] = useState('2026-10-19')
+ const [bookDate,setBookDate] = useState(()=>{const date=new Date();date.setDate(date.getDate()+1);return dateInputValue(date)})
  const [bookTime,setBookTime] = useState('6:00 PM')
  const [bookingNote,setBookingNote] = useState('')
  const [messageText,setMessageText] = useState('')
- const [messages,setMessages] = useState([{id:1,from:'them',text:'Hey Alex! Excited to exchange skills. What would you like to focus on first?',time:'2:42 PM'},{id:2,from:'me',text:'I would love to start with the fundamentals and then build something small.',time:'2:45 PM'}])
+ const [messages,setMessages] = usePersistentState('messages',[{id:1,from:'them',text:'Hey Alex! Excited to exchange skills. What would you like to focus on first?',time:'2:42 PM'},{id:2,from:'me',text:'I would love to start with the fundamentals and then build something small.',time:'2:45 PM'}])
  const [guildQuery,setGuildQuery] = useState('')
  const [newGuild,setNewGuild] = useState({name:'',about:''})
  const [mobileNavOpen,setMobileNavOpen] = useState(false)
+ useEffect(() => {
+  const onKeyDown = event => {
+   if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'k') {
+    event.preventDefault()
+    setPage('Discover')
+    window.setTimeout(() => document.querySelector('.search-field input')?.focus(), 0)
+   }
+   if (event.key === 'Escape') { setModal(current => current ? null : current); setMobileNavOpen(false) }
+  }
+  window.addEventListener('keydown', onKeyDown)
+  return () => window.removeEventListener('keydown', onKeyDown)
+ }, [])
 
  const tell = (text) => { setToast(text); window.setTimeout(()=>setToast(''),2600) }
  const navigate = (p) => {setPage(p);setSelected(null);setModal(null);setMobileMenu(false);setMobileNavOpen(false);window.scrollTo({top:0,behavior:'smooth'})}
  const visibleSkills = useMemo(()=>{
    let list = skills.filter(s => {
     const text = (s.name+' '+s.category+' '+s.person+' '+s.tags.join(' ')+' '+s.teach).toLowerCase()
-    return (!query.trim()||text.includes(query.toLowerCase())) && (category==='All skills'||s.category===category) && (!matchesOnly || s.learn.toLowerCase().includes(profile.teach.toLowerCase()) || s.teach.toLowerCase().includes(profile.learn.toLowerCase()) || s.teach.toLowerCase().includes(profile.learn.split(' ')[0].toLowerCase()))
+    const miles = Number.parseFloat(s.location)
+    const withinDistance = distance === 'Anywhere' || !Number.isFinite(miles) || miles <= Number.parseFloat(distance)
+    const durationMatches = durationFilter === 'Any duration' || (durationFilter === 'Up to 30 min' && s.minutes <= 30) || (durationFilter === '45–60 min' && s.minutes >= 45 && s.minutes <= 60) || (durationFilter === '60+ min' && s.minutes >= 60)
+    const levelMatches = experienceFilter === 'All levels' || s.level === experienceFilter
+    return (!query.trim()||text.includes(query.toLowerCase())) && (category==='All skills'||s.category===category) && withinDistance && durationMatches && levelMatches && (!matchesOnly || s.learn.toLowerCase().includes(profile.teach.toLowerCase()) || s.teach.toLowerCase().includes(profile.learn.toLowerCase()) || s.teach.toLowerCase().includes(profile.learn.split(' ')[0].toLowerCase()))
    })
    if(sort==='Nearest') list.sort((a,b)=>parseFloat(a.location)-parseFloat(b.location))
    if(sort==='Top rated') list.sort((a,b)=>parseFloat(b.rating)-parseFloat(a.rating))
    if(sort==='Quick sessions') list.sort((a,b)=>a.minutes-b.minutes)
    return list
- },[skills,query,category,sort,matchesOnly,profile])
+ },[skills,query,category,sort,matchesOnly,profile,distance,durationFilter,experienceFilter])
+ const allGuilds = [...customGuilds, ...guilds]
  const unread = noticeCount
  const goProfile = () => navigate('My profile')
  const book = (skill) => {setSelected(skill);setModal('booking')}
  const confirmBooking = () => {
    if(!selected) return
-   const session={id:Date.now(),title:selected.name,person:selected.person,avatar:selected.avatar,color:selected.color,date:bookDate==='2026-10-19'?'Mon, Oct 19':new Date(bookDate+'T12:00:00').toLocaleDateString('en-US',{month:'short',day:'numeric'}),time:bookTime,duration:selected.minutes+' min',status:'Pending',type:'Learning',note:bookingNote}
+   const session={id:Date.now(),title:selected.name,person:selected.person,avatar:selected.avatar,color:selected.color,date:new Date(bookDate+'T12:00:00').toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric'}),time:bookTime,duration:selected.minutes+' min',status:'Pending',type:'Learning',note:bookingNote}
    setSessions(v=>[session,...v]);setModal(null);setPage('My sessions');tell('Session request sent to '+selected.person.split(' ')[0])
  }
  const toggleSave = (id) => setSaved(v=>v.includes(id)?v.filter(x=>x!==id):[...v,id])
