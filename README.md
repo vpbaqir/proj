@@ -1,29 +1,38 @@
 # SkillLoop
 
-Trade expertise, not cash—connect locally to learn, teach, and grow.
+SkillLoop is a responsive, dark/neumorphic web preview for a community where people exchange knowledge instead of paying cash. The current release is designed to be deployed publicly as an interactive product demo.
 
-A polished responsive React + Vite prototype for local, time-based skill swaps. Built with an editorial dark/neumorphic interface, subtle mint accents, accessible labels, and responsive layouts.
+## Included
 
-## What works in this prototype
-- Browse and search community skills, filter by category, and sort by distance, rating, and duration
-- Browse personalized matching mode (heuristic match based on profile interests)
-- Save and unsave skills
-- Request a skill exchange with a date, time, and note
-- View sessions and status, send demo in-app messages
-- Offer a skill, edit a profile, browse/join local guilds
-- Responsive mobile navigation, notifications, and basic safety guidance
+- Responsive discover, community, saved-skills, sessions, messages, and profile screens
+- Search, category filters, distance sorting/filtering, rating sorting, session-duration and experience-level filters
+- Add a sample skill, request a sample session, edit the local profile, join sample guilds, and create a guild
+- Keyboard shortcuts: `Ctrl/⌘ + K` focuses skill search; `Esc` closes open overlays
+- Local-browser persistence for profile changes, saved skills, sessions, messages, and guild membership
+- Accessible form types, visible keyboard focus, live date defaults, app icon, web manifest, social metadata, and baseline security headers
 
 ## Run locally
-\`\`\`bash
+
+Requires Node.js 22.12 or later.
+
+```bash
 npm install
 npm run dev
-\`\`\`
+```
 
-## Build
-\`\`\`bash
+## Build and preview
+
+```bash
 npm run build
 npm run preview
-\`\`\`
+```
 
-## Important prototype notes
-Data is stored in in-memory React state and resets on refresh. Authentication, real location matching, ID verification, video calls, moderation, persistent storage, notifications, and a real double-entry time-credit ledger are not connected. Never present a demo verification badge or time balance as proof of real identity or transferable credits. Before launch, add a backend (e.g. Supabase), row-level security, server-side validation, abuse reporting, and tests for all credit transactions.
+Vercel is configured to run `npm run build` and publish the Vite `dist/` folder.
+
+## Important release boundary
+
+**This is a browser-local demo, not yet a shared multi-user marketplace.** The sample profiles, ratings, locations, and existing conversation are illustrative. Edits persist in the visitor's browser only. No real booking request, message, identity verification, location lookup, notification, or time-credit transaction is sent to another person. Browser storage can be cleared by the user and does not sync to another device.
+
+Before presenting SkillLoop as a real community service, connect a dedicated backend for authentication and account recovery, a shared database with row-level security, server-validated booking and messaging, abuse reporting/moderation, privacy/terms pages, backups, and a tested time-credit ledger. Do not treat the sample ratings or verification icons as trust signals. Do not use a service-role API key in frontend code.
+
+See [TESTING.md](./TESTING.md) and [RELEASE_CHECKLIST.md](./RELEASE_CHECKLIST.md) before public launch.
