@@ -1,0 +1,19 @@
+{
+  "id": "/",
+  "name": "SkillLoop — Trade expertise, not cash",
+  "short_name": "SkillLoop",
+  "description": "A browser-local preview of a community for sharing skills and learning together.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#101212",
+  "theme_color": "#101212",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
